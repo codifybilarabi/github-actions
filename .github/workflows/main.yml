@@ -1,0 +1,46 @@
+name: Spring boot and AWS Elastic Beanstalk CICD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Step 1 checkout main branch
+        uses: actions/checkout@v2
+
+      - name: Step 2 setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+        - name: Step 3 maven build
+          run: mvn -Drevesion=${{ github.sha }} package
+
+        - name: Debugging step
+          run: |
+            cd target
+            ls -a
+
+        - name: Step 4 configure aws credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+            aws-region: "eu-central-1"
+
+        - name: Step 5 Upload artifacts to S3 bucket
+          run: aws s3 cp target/github-actions-${{ github.sha }}.jar s3://elasticbeanstalk-eu-central-1-173633793788
+
+        - name: Step 6 Create a new elastic beanstalk app version
+          run: |
+            aws elasticbeanstalk create-application-version \
+            --application-name github-actions \
+            --source-bundle S3Bucket="elasticbeanstalk-eu-central-1-173633793788", S3Key="github-actions-${{ github.sha }}.jar" \
+            --version-label "ver-${{ github.sha }}" \
+            --description "commit-sha-${{ github.sha }}"
+
+        - name: Step 7 deploy the app
+          run: aws elasticbeanstalk update-environment --environment-name Githubactions-env --version-label "ver-${{ github.sha }}"
