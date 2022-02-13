@@ -38,7 +38,7 @@ jobs:
         run: |
           aws elasticbeanstalk create-application-version \
           --application-name github-actions \
-          --source-bundle S3Bucket="elasticbeanstalk-eu-central-1-173633793788", S3key="github-actions-${{ github.sha }}.jar" \
+          --source-bundle S3Bucket="elasticbeanstalk-eu-central-1-173633793788",S3key="github-actions-${{ github.sha }}.jar" \
           --version-label "ver-${{ github.sha }}" \
           --description "commit-sha-${{ github.sha }}"
 
